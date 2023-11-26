@@ -7,7 +7,7 @@ services:
       dockerfile: Dockerfile
     image: egg
     volumes:
-      - ./pose_estimation:/src
+      - ./pose_estimation/ResNet.py:/src/pose_estimation/ResNet.py 
       - .:/src
       - ./lib:/src/lib
 
