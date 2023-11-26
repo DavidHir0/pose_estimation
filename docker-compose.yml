@@ -12,4 +12,6 @@ services:
 
   python:
     image: egg
+    volumes:
+      - .:/src
     entrypoint: [ "python" ]
