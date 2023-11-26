@@ -1,0 +1,15 @@
+version: '3.4'
+
+services:
+  base:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    image: egg
+    volumes:
+      - .:/src
+      - ./lib:/src/lib
+
+  python:
+    image: egg
+    entrypoint: [ "python" ]
