@@ -1,7 +1,8 @@
 import torch
 
+print("test")
 model = torch.hub.load('pytorch/vision:v0.10.0', 'resnet50', pretrained=True)
-
+print("test2")
 def some_function():
     model.eval()
     input_data = torch.randn(1, 3, 224, 224)
