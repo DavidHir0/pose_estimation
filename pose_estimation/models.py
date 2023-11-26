@@ -7,6 +7,7 @@ def load_resnet50():
     global loaded_model
 
     if loaded_model is None:
-        loaded_model = load('pytorch/vision:v0.10.0', 'resnet50', pretrained=True)
+        torch.hub._validate_not_a_forked_repo=lambda a,b,c: True
+        model = torch.hub.load('pytorch/vision:v0.9.0', 'resnet50', pretrained=True)
     
     return loaded_model
