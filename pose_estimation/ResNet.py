@@ -1,7 +1,7 @@
 import torch
 
 print("test")
-model = torch.hub.load('pytorch/vision:v0.10.0', 'resnet50', pretrained=True)
+model = torch.hub.load('pytorch/vision:v0.10.0', 'resnet18', pretrained=True)
 print("test2")
 def some_function():
     model.eval()
