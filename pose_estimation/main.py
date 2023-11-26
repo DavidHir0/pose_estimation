@@ -1,5 +1,5 @@
 import torch 
-from models import load_resnet50
+from models import resnet
 
-model = load_resnet50()
+model = resnet
 print(model)
