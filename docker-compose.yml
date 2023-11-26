@@ -5,13 +5,13 @@ services:
     build: 
       context: .
       dockerfile: Dockerfile
-    image: egg
+    image: pose_estimation
     volumes:
       - .:/src
       - ./lib:/src/lib
 
   python:
-    image: egg
+    image: pose_estimation
     volumes:
       - .:/src
     entrypoint: [ "python" ]
