@@ -6,6 +6,7 @@ ADD . /src
 WORKDIR /src
 
 RUN pip install --no-cache-dir --upgrade pip
+RUN pip install -r requirements.txt
 RUN pip install --no-cache-dir git+https://github.com/sinzlab/propose.git
 RUN pip install --no-cache-dir -e .
 
