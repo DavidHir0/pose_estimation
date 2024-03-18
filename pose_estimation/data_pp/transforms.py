@@ -6,6 +6,12 @@ from torch_geometric.data import HeteroData
 
 import propose.preprocessing.rat7m as pp
 from propose.poses.rat7m import Rat7mPose
+import numpy.typing as npt
+Image = npt.NDArray[float]
+from propose.poses import BasePose
+import numpy as np
+import torchvision.transforms as transforms
+import random
 
 
 class ScalePose(object):
@@ -37,21 +43,65 @@ class CenterPose(object):
 
 
 class CropImageToPose(object):
-    def __init__(self, width=350):
+    def __init__(self, width=448):
         self.width = width
+
+    def square_crop_to_pose(self, image: Image, pose2D: BasePose, width: int = 448) -> Image:
+        """
+        Crops a square from the input image such that the mean of the corresponding pose2D is in the center of the image.
+        :param image: Input image to be cropped.
+        :param pose2D: pose2D to find the center for cropping.
+        :param width: width of the cropping (default = 350)
+        :return: cropped image
+        """
+        mean_xy = pose2D.pose_matrix.mean(0).astype(int)
+
+
+        padding = int(width // 2)
+
+        x_min, x_max = 0, image.shape[1]
+        y_min, y_max = 0, image.shape[0]
+
+        x_start = max(mean_xy[0] - padding, x_min)
+        x_end = min(mean_xy[0] + padding, x_max)
+        y_start = max(mean_xy[1] - padding, y_min)
+        y_end = min(mean_xy[1] + padding, y_max)
+
+        x_slice = slice(x_start, x_end)
+        y_slice = slice(y_start, y_end)
+
+
+        pose2D.pose_matrix[:,0] -= x_start
+        pose2D.pose_matrix[:,1] -= y_start
+ 
+        image = image[y_slice, x_slice]
+        if image.shape[0] < width or image.shape[1] < width:
+            y_scale = image.shape[0] / width
+            x_scale = image.shape[1] / width
+            pose2D.pose_matrix[:,0] /= x_scale
+            pose2D.pose_matrix[:,1] /= y_scale
+            tensor_image = torch.from_numpy(image).permute(2, 0, 1).unsqueeze(0).float()
+            tensor_image = F.interpolate(tensor_image, size=(width, width), mode='bilinear', align_corners=False)
+            image = tensor_image.squeeze(0).permute(1, 2, 0).numpy()
+        return image, pose2D
+
+
 
     def __call__(self, x):
         key_vals = {k: v for k, v in zip(x._fields, x)}
 
-        pose = key_vals["poses"]
+        pose2D = key_vals["poses"]
         image = key_vals["images"]
         camera = key_vals["cameras"]
 
-        pose2D = Rat7mPose(camera.proj2D(pose))
-
-        key_vals["images"] = pp.square_crop_to_pose(
+        #pose2D = Rat7mPose(camera.proj2D(pose))
+    
+        image, pose2D = self.square_crop_to_pose(
             image=image, pose2D=pose2D, width=self.width
         )
+
+        key_vals["images"] = image
+        key_vals["poses"] = pose2D
 
         return x.__class__(**key_vals)
 
@@ -66,6 +116,51 @@ class NormalizeImages(object):
 
         return x.__class__(**key_vals)
 
+class random_rotate(object):
+    def __call__(self, x):
+        key_vals = {k: v for k, v in zip(x._fields, x)}
+
+        image = key_vals["images"]
+
+         # Randomly apply rotation
+        if random.random() < 0.5:  # 50% chance of rotation
+            angle = random.uniform(-30, 30)  # Random rotation angle between -30/30 degrees
+            image = transforms.functional.rotate(image, angle)
+
+        key_vals["images"] = image
+
+        return x.__class__(**key_vals)
+
+class random_flip(object):
+    def __call__(self, x):
+        key_vals = {k: v for k, v in zip(x._fields, x)}
+
+        image = key_vals["images"]
+
+
+        # Randomly apply horizontal flipping
+        if random.random() < 0.5:  # 50% chance of flipping
+            image = transforms.functional.hflip(image)
+
+        key_vals["images"] = image
+
+        return x.__class__(**key_vals)
+
+
+class random_color_jitter(object):
+    def __call__(self, x):
+        key_vals = {k: v for k, v in zip(x._fields, x)}
+
+        image = key_vals["images"]
+
+        # Randomly apply color jittering
+        if random.random() < 0.5:  # 50% chance of color jittering
+            color_jitter = transforms.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4, hue=0.1)
+            image = color_jitter(image)
+
+        key_vals["images"] = image
+
+        return x.__class__(**key_vals)
 
 class RotatePoseToCamera(object):
     def __call__(self, x):

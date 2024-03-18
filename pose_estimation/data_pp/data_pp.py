@@ -4,11 +4,12 @@ from pathlib import Path
 import pickle
 
 dirname = "data/rat7m"
-data_key = "s2-d1"
+dirname2 = "data/rat7m/"
+data_key = "s3-d1"
 mocap_path = f"{dirname}/mocap/mocap-{data_key}.mat"
 
 # Convert video to images
-#pp.convert_movies_to_images(dirname, data_key)
+# pp.convert_movies_to_images(dirname2, data_key)
 
 
 # Load pose and camera

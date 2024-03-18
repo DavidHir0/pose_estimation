@@ -11,6 +11,7 @@ from propose.cameras import Camera
 from propose.datasets.rat7m.Rat7mDataset import Rat7mDataset
 from propose.poses import Rat7mPose
 import pose_estimation.data_pp.transforms as tr2
+import torch
 
 TemporalSplit = namedtuple("TemporalSplit", ["train", "validation", "test"])
 
@@ -106,6 +107,18 @@ def temporal_split_dataset(
 
     return TemporalSplit(train=train, validation=validation, test=test)
 
+def collate_fn(batch):
+    filtered_batch = []
+    for sample in batch:
+        poses = sample.pose_matrix
+        threshold_x = sample.image.shape[1]
+        threshold_y = sample.image.shape[0]
+        if ((poses[:, 0] < 0) | (poses[:, 0] >= threshold_x) | 
+            (poses[:, 1] < 0) | (poses[:, 1] >= threshold_y)).any():
+            continue
+        filtered_batch.append(sample)
+    return torch.utils.data.dataloader.default_collate(filtered_batch)
+
 
 def static_loader(path: str, batch_size: int, cuda: bool = False) -> dict:
     """
@@ -125,6 +138,7 @@ def static_loader(path: str, batch_size: int, cuda: bool = False) -> dict:
         #ScaleInputs(scale=0.1, anti_aliasing=True),
         #tr2.NormalizeImages(),
         tr2.Make_2D(),
+        tr2.CropImageToPose(),
         tr2.ToGraph(),
         ToTensor(cuda),
     ]
@@ -136,9 +150,13 @@ def static_loader(path: str, batch_size: int, cuda: bool = False) -> dict:
     keys = ["train", "validation", "test"]
 
     dataloaders = {}
+    
+
     for tier in keys:
         subset_idx = getattr(split_dat, tier)
         sampler = SubsetRandomSampler(subset_idx)
-        dataloaders[tier] = DataLoader(dat, sampler=sampler, batch_size=batch_size)
+        # sampler = SequentialSampler(subset_idx)
+        dataloaders[tier] = DataLoader(dat, sampler=sampler, batch_size=batch_size, collate_fn=collate_fn)# filtrer images with keypoints out of bounds
+        # dataloaders[tier] = DataLoader(dat, sampler=sampler, batch_size=batch_size)
 
     return dataloaders

@@ -84,13 +84,13 @@ for i in dataloaders["train"]:
         normalized_image = normalized_image.astype(np.uint8)
 
         # Plot the image
-        plt.imshow(heat_map[0][0], cmap='gray')  
-        #plt.imshow(normalized_image, cmap='gray')  
+        #plt.imshow(heat_map[0][0], cmap='gray')  
+        plt.imshow(normalized_image)  
         plt.axis('off')
 
-        plt.scatter(pose[0, 0].cpu(), pose[0, 1].cpu(), color='red', marker='.') 
+        plt.scatter(pose[:, 0].cpu(), pose[:, 1].cpu(), color='red', marker='.') 
 
-        plt.savefig(f'image_with_pose.png', dpi=300)
+        plt.savefig(f'image_with_pose2.png', dpi=300)
         plt.show() 
 
         break  

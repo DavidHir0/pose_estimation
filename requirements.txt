@@ -11,6 +11,8 @@ wandb==0.12.21
 yacs==0.1.8
 neuralpredictors==0.3.0
 torch==1.9.0
+torchmetrics==1.2.0
+
 
 # Torch Geometric
 --find-links https://data.pyg.org/whl/torch-1.9.0+cu111.html

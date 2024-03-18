@@ -4,6 +4,9 @@ FROM sinzlab/pytorch:v3.9-torch1.9.0-cuda11.1-dj0.12.7 as base
 ADD . /src
 
 WORKDIR /src
+# RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys A4B469963BF863CC
+# RUN apt-get -yy update
+# RUN apt-get install -y ffmpeg
 
 RUN rm /etc/apt/sources.list.d/cuda.list
 RUN rm /etc/apt/sources.list.d/nvidia-ml.list
