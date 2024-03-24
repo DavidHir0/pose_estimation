@@ -14,8 +14,8 @@ import random
 
 
 # load and safe path
-load = "results/simple_architecture/lr_0.1/in_224x224/4_epochs"
-safe = "results/simple_architecture/lr_0.1/in_224x224/best"
+load = "results/simple_architecture/end_results/normal"
+safe = "results/simple_architecture/end_results/normal"
 
 # path to dataset
 dirname = "data/rat7m/s2-d1"
@@ -26,7 +26,7 @@ dataloaders = static_loader(dirname, batch_size=16, cuda=True)
 
 std = 0.04
 
-criterion = utils.cross_entropy
+criterion = utils.individual_cross_entropy
 
 # load models
 model = DeconvHeadModel()
@@ -47,8 +47,6 @@ fitted_gaussian = []
 loss = []
 running_loss = 0
 
-count = 0
-fitted_count= 0
 
 # evaluation loop
 with torch.no_grad():
@@ -76,10 +74,6 @@ with torch.no_grad():
             h_scale = norm_images.shape[-2] / pred_score_maps.shape[2]
             w_scale = norm_images.shape[-1] / pred_score_maps.shape[3]
 
-            
-            plt.imshow(pred_score_maps[0][0].cpu().numpy(), cmap='viridis', interpolation='nearest')
-            plt.colorbar()  # Add color bar to show the scale
-            plt.savefig("test")
 
             # create gt_heatmap
             label_mask = create_normalized_gaussian_maps(label_pose.clone(), pred_score_maps.shape[2], pred_score_maps.shape[3], std, quotients=(width_q, height_q))
@@ -87,26 +81,30 @@ with torch.no_grad():
 
             # calculate loss
             current_loss = criterion(pred_score_maps, label_mask)
-            print(current_loss)
-            loss.append(current_loss)
-            running_loss += current_loss.item() * images.shape[0]
-
-            # data count for loss
-            count += images.shape[0]
+            loss += current_loss.tolist()
+            running_loss += torch.sum(current_loss).item()
 
             
 
-            # get MSE and variance
+            # get MSE and fitted gaussinas parameters
 
-            MSE, fitted_MSE, fitted_gaussian, fitted_count = utils.get_MSE_var(pred_score_maps.clone(), label_pose.clone(), MSE, fitted_MSE, fitted_gaussian, fitted_count, (w_scale, h_scale))
+            MSE, fitted_MSE, fitted_gaussian = utils.get_MSE_var(pred_score_maps.clone(), label_pose.clone(), MSE, fitted_MSE, fitted_gaussian, (w_scale, h_scale))
 
 
+
+            tepoch.set_postfix(loss=(f"{running_loss/len(loss):.3f}, {sum(MSE)/len(MSE):.3f}"))
             
-            tepoch.set_postfix(loss=(running_loss/count, sum(MSE)/fitted_count))
-            break
-        
+# save loss and count for loss
+np.array(loss)
+np.array(MSE)
+np.array(fitted_MSE)
+np.array(fitted_gaussian)
 
+np.save(f"{safe}/loss.npy", loss)
 
+np.save(f"{safe}/MSE.npy", MSE)       
+np.save(f"{safe}/fitted_MSE.npy", fitted_MSE)   
+np.save(f"{safe}/fitted_gaussian.npy", fitted_gaussian)   
 
 
 

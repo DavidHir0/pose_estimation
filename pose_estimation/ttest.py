@@ -36,7 +36,7 @@ for i, batch in enumerate(dataloaders['train']):
     # print(im.shape)
     
     pose /= 4
-    map = create_normalized_gaussian_maps(pose, 112, 112, 0.02)
+    map = create_normalized_gaussian_maps(pose, 112, 112, 0.04)
     break
     print(i, im.shape)
 
@@ -44,8 +44,8 @@ plt.imshow(map[0][0], cmap='viridis')
 plt.savefig("test.png")
 
 plt.close()
-contour_level = 0.0565
-contour_level = 0.001
+contour_level = 0.018
+# contour_level = 0.001
 
 # Threshold the heatmap to create a binary mask
 binary_mask = (map[0][0].numpy() >= contour_level).astype(np.uint8)

@@ -39,8 +39,11 @@ def gaussian_2d(xy, mu_x, mu_y, sigma_x, sigma_y, rho):
 def cross_entropy(pred, target):
     return -torch.sum(torch.log(pred + 1e-15) * target) / (pred.shape[0] * pred.shape[1])
 
+def individual_cross_entropy(pred, target):
+    return (-torch.sum(torch.log(pred + 1e-15) * target, dim=(-1, -2))).flatten()
 
-def get_MSE_var(pred, label, MSE, fitted_MSE, fitted_gaussian, count, quotients = (1,1)):
+
+def get_MSE_var(pred, label, MSE, fitted_MSE, fitted_gaussian, quotients = (1,1)):
 
     # create mesh gird
     width, height = pred.shape[2:]
@@ -95,9 +98,9 @@ def get_MSE_var(pred, label, MSE, fitted_MSE, fitted_gaussian, count, quotients 
             fitted_MSE.append(current_fitted_MSE)
             fitted_gaussian.append(popt)
 
-            count += 1
 
-    return MSE, fitted_MSE, fitted_gaussian, count
+
+    return MSE, fitted_MSE, fitted_gaussian
 
             
 

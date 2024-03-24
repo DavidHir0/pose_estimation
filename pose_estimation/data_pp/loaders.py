@@ -139,6 +139,10 @@ def static_loader(path: str, batch_size: int, cuda: bool = False) -> dict:
         #tr2.NormalizeImages(),
         tr2.Make_2D(),
         tr2.CropImageToPose(),
+
+        # data augmentation
+        # tr2.random_rotate(), #rotation
+
         tr2.ToGraph(),
         ToTensor(cuda),
     ]

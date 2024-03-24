@@ -123,9 +123,9 @@ class random_rotate(object):
         image = key_vals["images"]
 
          # Randomly apply rotation
-        if random.random() < 0.5:  # 50% chance of rotation
-            angle = random.uniform(-30, 30)  # Random rotation angle between -30/30 degrees
-            image = transforms.functional.rotate(image, angle)
+        # if random.random() < 0.8:  # 50% chance of rotation
+        angle = random.uniform(-30, 30)  # Random rotation angle between -30/30 degrees
+        image = transforms.functional.rotate(image, angle)
 
         key_vals["images"] = image
 

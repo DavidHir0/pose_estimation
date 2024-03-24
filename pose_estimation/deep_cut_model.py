@@ -10,6 +10,7 @@ from sklearn.metrics import mean_squared_error
 from torchmetrics.classification import MulticlassCalibrationError
 import scipy.stats as st
 from torch import optim
+from torchvision.transforms import transforms
 
 torch.hub._validate_not_a_forked_repo = lambda a, b, c: True
 resnet = load('pytorch/vision:v0.9.0', 'resnet50', pretrained=True)
@@ -94,13 +95,14 @@ class DeconvHeadModel(nn.Module):
         torch.save(self.state_dict(), filepath)
 
 
-    def train_model(self, device, train_loader, optimizer, criterion, validate_loader=None, std=0.05, scheduler=None, num_epochs=10, size=224):
+    def train_model(self, device, train_loader, optimizer, criterion, validate_loader=None, std=0.05, scheduler=None, num_epochs=10, size=224, data_augmentation=[False, False, False]):
         self.to(device)
         self.train()
         training_loss = []
         training_MSE = []
         validation_loss = []
         validation_MSE = []
+        not_improved_count = 0
 
         for epoch in range(num_epochs):
             running_loss = 0.0
@@ -116,6 +118,28 @@ class DeconvHeadModel(nn.Module):
                 
                 for batch in tepoch:
                     images, label_pose = batch.image.to(device), batch.pose_matrix.to(device)
+
+                    # data augmentation [rotation, flip, color jitter]
+
+                    # flip
+                    if data_augmentation[1] is True:
+                        hflipper = transforms.RandomHorizontalFlip(p=0.5)
+                        images = hflipper(images)
+
+                    # colorjitter
+                    if data_augmentation[2] is True:
+                        images = images.permute(0, 3, 1, 2)
+                        color_jitter = transforms.ColorJitter(brightness=.1, hue=.1)
+                        images = color_jitter(images)
+                        images = images.permute(0,2,3,1)
+                        
+
+                    
+                    #rotation 
+                    if data_augmentation[0] is True:
+                        rotation = transforms.RandomRotation(degrees=(-30, 30))
+                        images = rotation(images)
+
 
                     # Normalize images and 
                     norm_images = normalize_input(images, size=size)
@@ -232,6 +256,16 @@ class DeconvHeadModel(nn.Module):
 
             validation_MSE.append(epoch_val_MSE)
             validation_loss.append(epoch_val_loss)
+
+            # check if loss didnt decerase
+            if epoch > 0 and validation_loss[-1] >= validation_loss[-2]:
+                not_improved_count += 1
+            else:
+                not_improved_count = 0
+            
+            if not_improved_count >= 3:
+                print("Validation loss hasn't improved for 3 consecutive epochs. Stopping training.")
+                return training_loss, training_MSE, validation_loss, validation_MSE
         
         print('Training complete.')
         return training_loss, training_MSE, validation_loss, validation_MSE

@@ -15,7 +15,7 @@ import torch.nn.functional as F
 def cross_entropy(pred, target):
     return -torch.sum(torch.log(pred + 1e-15) * target) / (pred.shape[0] * pred.shape[1])
 
-safe = "simple_architecture/end_results/5e_0.1lr_0.1plat"
+safe = "data_augmentation/color"
 
 dirname = "data/rat7m/s2-d1"
 
@@ -27,7 +27,7 @@ dataloaders =  static_loader(dirname, batch_size=16, cuda=True)
 
 model = DeconvHeadModel()
 
-optimizer = optim.SGD(model.parameters(), lr=0.1)#, weight_decay=0.0001
+optimizer = optim.SGD(model.parameters(), lr=0.1)#, momentum=0.9, weight_decay=0.0001, weight_decay=0.0001
 
 criterion = cross_entropy
 
@@ -42,7 +42,7 @@ std = 0.04 # for 112x112 maps, 50% in 10px range, 99% in 30px range
 
 # std = 0.02 # for 112x112 maps 50% in 5px range, 99% in 14px range
 
-epochs = 5
+epochs = 10
 
 #input size of network
 size = 224
@@ -53,9 +53,18 @@ random.seed(seed)
 torch.manual_seed(seed)
 np.random.seed(seed)
 
-loss, MSE, val_loss, val_MSE = model.train_model(device, dataloaders["train"], optimizer, criterion, validate_loader=dataloaders["validation"], std=std, scheduler=scheduler, num_epochs=epochs, size=size)
+# data augmentation [rotation, flip, color jitter]
+# data_aug = [False, True, False]
+data_aug = [False, False, True]
+
+loss, MSE, val_loss, val_MSE = model.train_model(device, dataloaders["train"], optimizer, criterion, validate_loader=dataloaders["validation"], std=std, scheduler=scheduler, num_epochs=epochs, size=size, data_augmentation=data_aug)
 
 model.save_model(f"results/{safe}/model_parameters.pt")
+
+loss = np.array(loss)
+MSE = np.array(MSE)
+val_loss = np.array(val_loss)
+val_MSE = np.array(val_MSE)
 
 np.save(f'results/{safe}/training_loss.npy', loss)
 np.save(f'results/{safe}/training_MSE.npy', MSE)
